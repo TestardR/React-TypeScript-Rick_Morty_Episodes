@@ -1,6 +1,8 @@
-import React, { Fragment, useContext, useEffect } from "react";
+import React, { Fragment, useContext, useEffect, lazy, Suspense } from "react";
 import { Store } from "./Store";
 import { IEpisode, IAction } from "./interfaces";
+
+const EpisodesList = lazy<any>(() => import("./EpisodesList"));
 
 const App: React.FC = () => {
   const { state, dispatch } = useContext(Store);
@@ -27,7 +29,6 @@ const App: React.FC = () => {
       payload: episode
     };
     if (episodeInFav) {
-      console.log("INSIDE episode in Fav");
       const favWithoutEpisode = state.favourites.filter(
         (fav: IEpisode) => fav.id !== episode.id
       );
@@ -39,31 +40,26 @@ const App: React.FC = () => {
     return dispatch(dispatchObject);
   };
 
+  const props = {
+    episodes: state.episodes,
+    toggleFavAction,
+    favourites: state.favourites
+  };
+
   return (
     <Fragment>
       <header>
         <h1>Rick and Morty</h1>
-        <p>Pick your favourite episode !</p>
+        <div>
+          <p>Pick your favourite episode !</p>
+          <p>You have {state.favourites.length} favourites</p>
+        </div>
       </header>
-      <section className="episode-layout">
-        {state.episodes.map((episode: IEpisode) => (
-          <section key={episode.id} className="episode-box">
-            {episode.image && <img src={episode.image.medium}></img>}
-            <div> {episode.name}</div>
-            <section>
-              <div>
-                Season: {episode.season} | Number: {episode.number}
-              </div>
-
-              <button type="button" onClick={() => toggleFavAction(episode)}>
-                {state.favourites.find((fav: IEpisode) => fav.id === episode.id)
-                  ? "Unfav"
-                  : "Fav"}
-              </button>
-            </section>
-          </section>
-        ))}
-      </section>
+      <Suspense fallback={<div>loading...</div>}>
+        <section className="episode-layout">
+          <EpisodesList {...props} />
+        </section>
+      </Suspense>
     </Fragment>
   );
 };
